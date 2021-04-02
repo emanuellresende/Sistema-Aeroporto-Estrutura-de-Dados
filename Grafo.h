@@ -31,6 +31,7 @@ typedef struct Tipo_Voo
     char duracao_horario[6];
     char de[4];
     char para[4];
+    int paradas;
 } Tipo_Voo;
 
 typedef struct Aeroporto

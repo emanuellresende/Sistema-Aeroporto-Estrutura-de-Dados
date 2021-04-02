@@ -1,378 +1,285 @@
-//Bibliotecas
 
 #include <stdio.h>
-
 #include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+#include "leitura.h"
+#include "Grafo.h"
 
-#include <math.h>
-
-#include <locale.h>
-
-//Variáveis
-
-int destino, origem, vertices = 0;
-
-int custo, *custos = NULL;
-
-//Prototipação
-
-void dijkstra(int vertices, int origem, int destino, int *custos);
-
-void menu_mostrar(void);
-
-void grafo_procurar(void);
-
-void grafo_criar(void);
-
-//Função principal
-
-int main(int argc, char **argv)
+Tipo_Voo *ler(GRAFO *voos, TypeGraphMatriz *rotas, FILE *arq, int vertices, Aeroporto *aeroporto)
 {
-
-  setlocale(LC_ALL, "Portuguese");
-
-  int opt = -1;
-
-  //Laço principal do menu
-
-  do
-  { //Desenha o menu na tela
-
-    menu_mostrar();
-
-    scanf("%d", &opt);
-
-    switch (opt)
+    rewind(arq); // VOlta o arquivo pro inicio
+    char lixo[500];
+    char de[10];
+    char para[10];
+    char identificador[10];
+    int duracao;
+    char horario[10];
+    char abreviacao_cidade[4];
+    char nome_cidade[30];
+    char nome_aeroporto[30];
+    int i = 0;
+    int bb = 0;
+    char hora_duracao[10];
+    Aeroporto aux_adj;
+    int xi = 0, xy = 0;
+    Tipo_Voo *dados_voo = malloc(sizeof(Tipo_Voo));
+    while (!feof(arq))
     {
 
-    case 1:
-
-      //cria um novo grafo
-
-      grafo_criar();
-
-      break;
-
-    case 2: //procura os caminhos
-
-      if (vertices > 0)
-      {
-
-        grafo_procurar();
-      }
-
-      break;
-    }
-
-  } while (opt != 0);
-
-  printf("\nAlgoritmo de Dijkstra finalizado...\n\n");
-
-  system("pause");
-
-  return 0;
-
-} //Implementação do algoritmo de Dijkstra
-
-void dijkstra(int vertices, int origem, int destino, int *custos)
-
-{
-
-  int i, v, cont = 0;
-
-  int *ant, *tmp;
-
-  int *z; /* vertices para os quais se conhece o caminho minimo */
-
-  double min;
-
-  double dist[vertices]; /* vetor com os custos dos caminhos */
-
-  /* aloca as linhas da matriz */
-
-  ant = (int *)calloc(vertices, sizeof(int *));
-
-  if (ant == NULL)
-  {
-
-    system("color fc");
-
-    printf("** Erro: Memória Insuficiente **");
-
-    exit(-1);
-  }
-
-  tmp = (int *)calloc(vertices, sizeof(int *));
-
-  if (tmp == NULL)
-  {
-
-    system("color fc");
-
-    printf("** Erro: Memória Insuficiente **");
-
-    exit(-1);
-  }
-
-  z = (int *)calloc(vertices, sizeof(int *));
-
-  if (z == NULL)
-  {
-
-    system("color fc");
-
-    printf("** Erro: Memória Insuficiente **");
-
-    exit(-1);
-  }
-
-  for (i = 0; i < vertices; i++)
-  {
-
-    if (custos[(origem - 1) * vertices + i] != -1)
-    {
-
-      ant[i] = origem - 1;
-
-      dist[i] = custos[(origem - 1) * vertices + i];
-    }
-
-    else
-    {
-
-      ant[i] = -1;
-
-      dist[i] = HUGE_VAL;
-    }
-
-    z[i] = 0;
-  }
-
-  z[origem - 1] = 1;
-
-  dist[origem - 1] = 0;
-
-  /* Laco principal */
-
-  do
-  { /* Encontrando o vertice que deve entrar em z */
-
-    min = HUGE_VAL;
-
-    for (i = 0; i < vertices; i++)
-    {
-
-      if (!z[i])
-      {
-
-        if (dist[i] >= 0 && dist[i] < min)
+        switch (fgetc(arq))
         {
 
-          min = dist[i];
-          v = i;
+        case '#': // Se achar esse caractere vai simplismente ignorar por ser comentario
+
+            fscanf(arq, "%[^\n]s", lixo);
+            fgetc(arq);
+
+            break;
+
+        case '$': // Caracter generico usado para controle
+
+            for (i = 0; i < vertices; i++)
+            {
+
+                fgetc(arq); // Le o \n depois do caracter $
+
+                fscanf(arq, "%s", aeroporto[i].sigla); // Pega o nome da abreviacao
+
+                fgetc(arq); // Pega o espaco
+
+                fscanf(arq, "%[^(]s", aeroporto[i].cidade); // Le o nome da cidade
+
+                fgetc(arq); // Pega o espaco
+
+                fscanf(arq, "%[^)]s", aeroporto[i].aeroporto); // Le o nome do aeroporto
+            }
+            fgetc(arq); // Removeo )
+            //Remove os ultimos \n
+            fgetc(arq);
+            fgetc(arq);
+            fgetc(arq);
+
+            break;
+
+        case '!': // Caracter generico de controle
+            while (1)
+            {
+                int aux_conexao1 = 0, aux_conexao2 = 0; // Variaveis para auxiliar para setar as conexoes
+                fgetc(arq);                             // Le o \n depois do !
+
+                fscanf(arq, "%s", de); // Pega a conexao
+
+                if (strcmp(de, "!") == 0) // Caso a conexao seja o caracter de pause
+                    break;
+
+                fgetc(arq); // Pega o espaco
+
+                fscanf(arq, "%s", para); // Le o para
+
+                fgetc(arq); // Le o \n
+
+                /*Procurando a conexao DE*/
+
+                ///
+                xi = pesquisar_id_voo(voos, de, aeroporto); // Retorna o ID do Aeroporto
+                xy = pesquisar_id_voo(voos, para, aeroporto);
+
+                rotas->Mat[xi][xy] = 1;
+                rotas->qntArestas += 1;
+
+              
+            }
+            break;
+
+        case '%':
+            i = 0;
+            while (1)
+            {
+                xi = 0;
+                xy = 0;
+                fgetc(arq); // Le o \n depois do caracter %
+
+                fscanf(arq, "%s", identificador);
+
+                //Se encontrar o caracter final ira parar
+                if (strcmp(identificador, "%") == 0)
+                    break;
+
+                fgetc(arq); // Le o espaco
+
+                fscanf(arq, "%s", de); // Le a origem
+
+                fgetc(arq); // Le o espaco
+
+                fscanf(arq, "%s", para); // Le o destino
+
+                fgetc(arq); // Le o espaco
+
+                fscanf(arq, "%d", &duracao); // Le a duracao
+
+                fgetc(arq); // Le o espaco
+
+                fscanf(arq, "%d", &bb);
+
+                fgetc(arq);
+
+                fscanf(arq, "%[^,]s", hora_duracao); // Le a duracao em forma de horas
+
+                xi = pesquisar_id_voo(voos, de, aeroporto);
+                xy = pesquisar_id_voo(voos, para, aeroporto);
+                if (criaAresta(voos, xi, xy) == true)
+                {
+
+                    strcpy(dados_voo[i].de, de);
+                    strcpy(dados_voo[i].para, para);
+                    strcpy(dados_voo[i].identificador_voo, identificador);
+                    strcpy(dados_voo[i].duracao_horario, hora_duracao);
+                    dados_voo[i].duracao = duracao;
+                    dados_voo[i].paradas = bb;
+                    dados_voo->quantidade_voo += 1;
+                    i += 1;
+                    dados_voo = (Tipo_Voo *)realloc(dados_voo, (i + 1) * sizeof(Tipo_Voo));
+                }
+            }
+            printf("\nFora main%s\n", dados_voo[0].identificador_voo);
+            break;
         }
-      }
+    }
 
-    } /* Calculando as distancias dos novos vizinhos de z */
+    /*Fecha o arquivo*/
+    fclose(arq);
 
-    if (min != HUGE_VAL && v != destino - 1)
+    return dados_voo;
+}
+
+int retornar_posicao_voo_id_cadastro(Tipo_Voo *voo, char *de, GRAFO *grafo)
+{
+    int vertice = voo->quantidade_voo;
+    for (int i = 0; i < vertice; i++)
     {
+        if (strcmp(de, voo[i].identificador_voo) == 0){
+            return i;
+        }
+    }
+    return -1;
+}
 
-      z[v] = 1;
+int retornar_posicao_voo_id(Tipo_Voo *voo, char *de)
+{
+    int vertice = voo->quantidade_voo;
+    for (int i = 0; i < vertice; i++)
+    {
+        if (strcmp(de, voo[i].identificador_voo) == 0)
+            return i;
+    }
+    return -1;
+}
 
-      for (i = 0; i < vertices; i++)
-      {
-
-        if (!z[i])
+int pesquisar_id_voo(GRAFO *voos, char de[10], Aeroporto *a)
+{
+    int i, vertice = 0;
+    vertice = voos->qnt_Vertices;
+    for (i = 0; i < vertice; i++)
+    {
+        if (strcmp(a[i].sigla, de) == 0)
         {
-
-          if (custos[v * vertices + i] != -1 && dist[v]
-
-                                                        + custos[v * vertices + i] <
-                                                    dist[i])
-          {
-
-            dist[i] = dist[v] + custos[v * vertices + i];
-
-            ant[i] = v;
-          }
+            return i;
         }
-      }
     }
-
-  } while (v != destino - 1 && min != HUGE_VAL);
-
-  /* Mostra o Resultado da busca */
-
-  printf("\tDe %d para %d: \t", origem, destino);
-
-  if (min == HUGE_VAL)
-  {
-
-    printf("Não Existe\n");
-
-    printf("\tCusto: \t- \n");
-  }
-
-  else
-  {
-
-    i = destino;
-
-    i = ant[i - 1];
-
-    while (i != -1)
-    {
-
-      tmp[cont] = i + 1;
-
-      cont++;
-
-      i = ant[i];
-    }
-
-    for (i = cont; i > 0; i--)
-    {
-
-      printf("%d -> ", tmp[i - 1]);
-    }
-
-    printf("%d", destino);
-
-    printf("\n\tCusto:  %d\n", (int)dist[destino - 1]);
-  }
+    return -1;
 }
 
-void grafo_criar(void)
+void possibilidade_voo(char de[10], char para[10], Tipo_Voo *voo)
 {
-
-  do
-  {
-
-    printf("\nInforme o número de vértices (no minimo 3 ): ");
-
-    scanf("%d", &vertices);
-
-  } while (vertices < 3);
-
-  if (!custos)
-  {
-
-    free(custos);
-  }
-
-  custos = (int *)malloc(sizeof(int) * vertices * vertices);
-
-  //Se o compilador falhou em alocar espaÃ§o na memÃ³ria
-
-  if (custos == NULL)
-  {
-
-    system("color fc");
-
-    printf("** Erro: Memória Insuficiente **");
-
-    exit(-1);
-
-  } //Preenchendo a matriz com -1
-
-  for (int i = 0; i <= vertices * vertices; i++)
-  {
-
-    custos[i] = -1;
-  }
-
-  do
-  {
-
-    system("cls");
-
-    printf("Entre com as Arestas:\n");
-
-    do
+    int duracao = voo->quantidade_voo;
+    for (int i = 0; i < duracao; i++)
     {
-
-      printf("digite a origem (entre 0 e %d ou 00 para sair): ", vertices); // aqui não aceita entrar com aresta inicial zero
-
-      scanf("%d", &origem);
-
-    } while (origem < 0 || origem > vertices);
-
-    if (origem)
-    {
-
-      do
-      {
-
-        printf("Digite o destino (entre 1 e %d, menos %d): ", vertices, origem);
-
-        scanf("%d", &destino);
-
-      } while (destino < 1 || destino > vertices || destino == origem);
-
-      do
-      {
-
-        printf("Digite o custo (positivo) do vértice %d para o vértice %d: ",
-
-               origem, destino);
-
-        scanf("%d", &custo);
-
-      } while (custo < 0);
-
-      custos[(origem - 1) * vertices + destino - 1] = custo;
+        if (strcmp(voo[i].de, de) == 0 && strcmp(voo[i].para, para) == 0)
+        {
+            printf("|Voo: %s\t|De: %s\t|Para: %s\t|Duracao: %d|\tTempo: %s\t\n", voo[i].identificador_voo, voo[i].de, voo[i].para, voo[i].duracao, voo[i].duracao_horario);
+        }
     }
-
-  } while (origem);
 }
 
-//Busca os menores caminhos entre os vértices
-
-void grafo_procurar(void)
+int retornar_posicao_voo(Tipo_Voo *dados, Aeroporto *aeroporto, char de[10], GRAFO *voos)
 {
 
-  int i, j;
-
-  system("cls");
-
-  system("color 03");
-
-  printf("Lista dos Menores Caminhos no Grafo Dado: \n");
-
-  for (i = 1; i <= vertices; i++)
-  {
-
-    for (j = 1; j <= vertices; j++)
+    int i, j;
+    for (i = 0; i < dados->quantidade_voo; i++)
     {
-
-      dijkstra(vertices, i, j, custos);
+        if (strcmp(dados[i].identificador_voo, de) == 0)
+        {
+            for (j = 0; j < voos->qnt_Vertices; j++)
+            {
+                if (strcmp(dados[i].de, aeroporto[j].sigla) == 0)
+                {
+                    return j;
+                }
+            }
+        }
     }
-
-    printf("\n");
-  }
-
-  system("pause");
-
-  system("color 07");
+    return -1;
 }
 
-//Desenha o menu na tela
-
-void menu_mostrar(void)
+void DFS(TypeGraphMatriz *rotas, Aeroporto *aeroporto, int origem, int destino, int paradas)
 {
+    int *guardar_rotas = malloc(sizeof(int) * rotas->qntVertices);
+    int tamanho = 0;
+    for (int i = 0; i < rotas->qntVertices; i++)
+        guardar_rotas[i] = -1;
+    DFS_Routh(rotas, aeroporto, origem, origem, destino, paradas, tamanho, guardar_rotas);
+}
 
-  system("cls");
+void DFS_Routh(TypeGraphMatriz *rotas, Aeroporto *aeroporto, int inicial, int origem, int destino, int paradas, int tamanho, int *guardar_rotas)
+{
+    int vertice = rotas->qntVertices;
 
-  printf("Implementação Mapa Estrutura de Dados II, solução com Algoritmo de Dijasktra\n");
+    for (int i = 0; i < vertice; i++)
+    {
+        int teste = 0;
+        for (int j = 0; j < tamanho; j++)
+        {
+            if (i == guardar_rotas[j])
+            {
+                teste = 1;
+            }
+        }
 
-  printf("Opcoes:\n");
+        if (teste == 0 && i != inicial && rotas->Mat[inicial][i] == 1 && i != destino && i != origem)
+        {
+            guardar_rotas[tamanho] = i;
+            tamanho += 1;
+            DFS_Routh(rotas, aeroporto, i, origem, destino, paradas, tamanho, guardar_rotas);
+        }
 
-  printf("\t 1 - Adicionar um Grafo\n");
+        else if (teste == 0 && i != inicial && rotas->Mat[inicial][i] == 1 && i == destino && tamanho >= paradas)
+        {
+            printf("%s -> ", aeroporto[origem].sigla);
+            for (int j = 0; j < tamanho; j++)
+            {
+                printf("%s -> ", aeroporto[guardar_rotas[j]].sigla);
+            }
+            printf("%s\n\n", aeroporto[destino].sigla);
+        }
+    }
+}
 
-  printf("\t 2 - Procura Os Menores Caminhos no Grafo\n");
-
-  printf("\t 0 - Sair do programa\n");
-
-  printf("? ");
+void mostrar_voo_semconaxao(TypeGraphMatriz *rotas, int id, Tipo_Voo *voo, Aeroporto *aeroporto)
+{
+    int vertice = rotas->qntVertices;
+    for (int i = 0; i < vertice; i++)
+    {
+        if (rotas->Mat[id][i] == 0)
+        {
+            for (int j = 0; j < voo->quantidade_voo; j++)
+            {
+                if (strcmp(voo[j].de, aeroporto[id].sigla) == 0 && strcmp(voo[j].para, aeroporto[i].sigla) == 0)
+                {
+                    printf("Voo: %s|\tDe: %s|\tPara: %s|\tDuracao: %d|\tTempo: %s|\t", voo[j].identificador_voo, voo[j].de, voo[j].para, voo[j].duracao, voo[j].duracao_horario);
+                    printf("\n");
+                }
+            }
+        }
+    }
 }

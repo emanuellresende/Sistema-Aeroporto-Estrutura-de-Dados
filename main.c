@@ -15,7 +15,9 @@ int main()
         printf("ERRO NO ARQUIVO");
         exit(1);
     }
-
+    int id_aeroporto = 0;
+    int paradas = 0;
+    int id_voo = 0;
     int vertice = numero_deVERTICES(arq);
     ///////////////////////////////////////////////////////
     TypeGraphMatriz *rotas = criarGrafo(vertice);
@@ -70,29 +72,28 @@ int main()
             break;
 
         case 2:
+
             system("clear");
             printf("Digite o voo para descobrir a rota\n");
             printf("Voo:");
             scanf("%s", de);
             printf("\n");
-            xi = retornar_posicao_voo(dados_voo, aeroporto, de, voo);
-            int paradas = 0;
-            if (xi == -1)
+            paradas = 0;
+            id_aeroporto = retornar_posicao_voo(dados_voo, aeroporto, de, voo); // Retorna a posicao do voo no aeroporto
+
+            if (id_aeroporto == -1)
             {
                 printf("\n\t\t\t - Nao achou - \t\t\t\n");
                 break;
             }
-            strcpy(de, dados_voo[xi].de);
-            strcpy(para, dados_voo[xi].para);
+            id_voo = retornar_posicao_voo_id(dados_voo, de);
+            paradas = dados_voo[id_voo].paradas;
+            strcpy(de, dados_voo[id_voo].de);
+            strcpy(para, dados_voo[id_voo].para);
             xi = pesquisar_id_voo(voo, de, aeroporto);
             xy = pesquisar_id_voo(voo, para, aeroporto);
-            for (int i = 0; i < rotas->qntVertices; i++)
-            {
-                if (rotas->Mat[xi][i] > 0)
-                    paradas += 1;
-            }
             DFS(rotas, aeroporto, xi, xy, paradas);
-            ///DFS(xi, rotas, aeroporto, visited);
+
             break; // fecha o case 2
 
         default:

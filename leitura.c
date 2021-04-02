@@ -19,6 +19,7 @@ Tipo_Voo *ler(GRAFO *voos, TypeGraphMatriz *rotas, FILE *arq, int vertices, Aero
     char nome_cidade[30];
     char nome_aeroporto[30];
     int i = 0;
+    int bb = 0;
     char hora_duracao[10];
     Aeroporto aux_adj;
     int xi = 0, xy = 0;
@@ -81,13 +82,14 @@ Tipo_Voo *ler(GRAFO *voos, TypeGraphMatriz *rotas, FILE *arq, int vertices, Aero
                 /*Procurando a conexao DE*/
 
                 ///
-                xi = pesquisar_id_voo(voos, de, aeroporto);
+                xi = pesquisar_id_voo(voos, de, aeroporto); // Retorna o ID do Aeroporto
                 xy = pesquisar_id_voo(voos, para, aeroporto);
 
                 rotas->Mat[xi][xy] = 1;
                 rotas->qntArestas += 1;
-            }
 
+              
+            }
             break;
 
         case '%':
@@ -118,6 +120,10 @@ Tipo_Voo *ler(GRAFO *voos, TypeGraphMatriz *rotas, FILE *arq, int vertices, Aero
 
                 fgetc(arq); // Le o espaco
 
+                fscanf(arq, "%d", &bb);
+
+                fgetc(arq);
+
                 fscanf(arq, "%[^,]s", hora_duracao); // Le a duracao em forma de horas
 
                 xi = pesquisar_id_voo(voos, de, aeroporto);
@@ -130,6 +136,7 @@ Tipo_Voo *ler(GRAFO *voos, TypeGraphMatriz *rotas, FILE *arq, int vertices, Aero
                     strcpy(dados_voo[i].identificador_voo, identificador);
                     strcpy(dados_voo[i].duracao_horario, hora_duracao);
                     dados_voo[i].duracao = duracao;
+                    dados_voo[i].paradas = bb;
                     dados_voo->quantidade_voo += 1;
                     i += 1;
                     dados_voo = (Tipo_Voo *)realloc(dados_voo, (i + 1) * sizeof(Tipo_Voo));
@@ -144,6 +151,29 @@ Tipo_Voo *ler(GRAFO *voos, TypeGraphMatriz *rotas, FILE *arq, int vertices, Aero
     fclose(arq);
 
     return dados_voo;
+}
+
+int retornar_posicao_voo_id_cadastro(Tipo_Voo *voo, char *de, GRAFO *grafo)
+{
+    int vertice = voo->quantidade_voo;
+    for (int i = 0; i < vertice; i++)
+    {
+        if (strcmp(de, voo[i].identificador_voo) == 0){
+            return i;
+        }
+    }
+    return -1;
+}
+
+int retornar_posicao_voo_id(Tipo_Voo *voo, char *de)
+{
+    int vertice = voo->quantidade_voo;
+    for (int i = 0; i < vertice; i++)
+    {
+        if (strcmp(de, voo[i].identificador_voo) == 0)
+            return i;
+    }
+    return -1;
 }
 
 int pesquisar_id_voo(GRAFO *voos, char de[10], Aeroporto *a)
@@ -203,19 +233,27 @@ void DFS(TypeGraphMatriz *rotas, Aeroporto *aeroporto, int origem, int destino, 
 
 void DFS_Routh(TypeGraphMatriz *rotas, Aeroporto *aeroporto, int inicial, int origem, int destino, int paradas, int tamanho, int *guardar_rotas)
 {
-  
+    int vertice = rotas->qntVertices;
 
-    int vertice = rotas->qntVertices, teste = 0;
     for (int i = 0; i < vertice; i++)
     {
-        if (guardar_rotas[i] != -1)
-            teste = 1;
-        if (teste == 0 && i != inicial && rotas->Mat[inicial][i] > 0 && i != destino && i != origem)
+        int teste = 0;
+        for (int j = 0; j < tamanho; j++)
+        {
+            if (i == guardar_rotas[j])
+            {
+                teste = 1;
+            }
+        }
+
+        if (teste == 0 && i != inicial && rotas->Mat[inicial][i] == 1 && i != destino && i != origem)
         {
             guardar_rotas[tamanho] = i;
-            DFS_Routh(rotas, aeroporto, i, origem, destino, paradas, tamanho + 1, guardar_rotas);
+            tamanho += 1;
+            DFS_Routh(rotas, aeroporto, i, origem, destino, paradas, tamanho, guardar_rotas);
         }
-        else if (teste == 0 && i != inicial && rotas->Mat[inicial][i] > 0 && i == destino && tamanho > paradas)
+
+        else if (teste == 0 && i != inicial && rotas->Mat[inicial][i] == 1 && i == destino && tamanho >= paradas)
         {
             printf("%s -> ", aeroporto[origem].sigla);
             for (int j = 0; j < tamanho; j++)
