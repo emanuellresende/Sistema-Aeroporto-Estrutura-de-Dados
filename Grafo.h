@@ -44,8 +44,8 @@ typedef struct Aeroporto
 } Aeroporto;
 typedef struct adjacencia
 {
-    int vertice;
-    int qnt_voo;
+    int id_voo;
+ 
     struct adjacencia *prox;
 } ADJACENCIA;
 

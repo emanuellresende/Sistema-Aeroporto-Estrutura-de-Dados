@@ -27,8 +27,7 @@ GRAFO *criarGrafo_adj(int v) //  Vou passar por referencia a quantidade de verti
 ADJACENCIA *criaAdj(int v) // vf e variavel
 {
     ADJACENCIA *temp = (ADJACENCIA *)malloc(sizeof(ADJACENCIA));
-    temp->vertice = v;
-    temp->qnt_voo += 1;
+    temp->id_voo = v;
     temp->prox = NULL;
     return (temp);
 }
@@ -36,11 +35,7 @@ ADJACENCIA *criaAdj(int v) // vf e variavel
 bool criaAresta(GRAFO *gr, int de, int para)
 { //vai de de a para
 
-    if ((para < 0) || (para >= gr->qnt_Vertices))
-        return (false);
-    if ((de < 0) || (para >= gr->qnt_Vertices))
-        return (false);
-
+    
     ADJACENCIA *novo = criaAdj(para);
 
     novo->prox = gr->adj[de].ligar;
@@ -69,11 +64,11 @@ void imprime(GRAFO *gr)
 
     for (i = 0; i < gr->qnt_Vertices; i++)
     {
-        printf("v%d: ", i);
+        printf("Aeroporto: %d: ", i);
         ADJACENCIA *ad = gr->adj[i].ligar;
         while (ad)
         {
-            printf("v%d(%d) ", ad->vertice, ad->qnt_voo);
+            printf("%d - ", ad->id_voo);
             ad = ad->prox;
         }
         printf("\n");

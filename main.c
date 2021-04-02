@@ -106,7 +106,7 @@ int main()
             scanf("%s", de);
             printf("\n");
             xi = pesquisar_id_voo(voo, de, aeroporto);
-            mostrar_voo_semconaxao(rotas, xi, dados_voo, aeroporto);
+            mostrar_voo_semconaxao(xi, dados_voo, voo);
 
             break; // fecha o case 3
 
@@ -135,6 +135,8 @@ int main()
                 printf("\n\t\t\tNao e possivel ir pra onde ja esta\t\t\t\n");
                 break;
             }
+
+
 
             break; // fecha o case 4
         case 7:
